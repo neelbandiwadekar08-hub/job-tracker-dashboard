@@ -85,10 +85,6 @@ The app loads its libraries from a CDN, so an internet connection is needed on f
 
 All application data is stored in your browser's local storage on your own device. Clearing your browser data removes it, so use the JSON export if you want a backup.
 
-## Known limitations
-
-- The **Avg. Response Time** card currently shows a default value, because the app does not yet collect response dates. It is not calculated from your entries.
-
 ## Sample data notice
 
 The companies, positions, and statuses shown in the demo are a **sample dataset for demonstration purposes only**. They are not my real applications, and they do not reflect real hiring decisions by any company named.
