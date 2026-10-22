@@ -11,17 +11,13 @@
 <p align="left">
   <a href="https://github.com/neelbandiwadekar08-hub/job-tracker-dashboard/stargazers"><img src="https://img.shields.io/github/stars/neelbandiwadekar08-hub/job-tracker-dashboard?style=flat&logo=github" alt="Stars"></a>
   <a href="https://github.com/neelbandiwadekar08-hub/job-tracker-dashboard/commits/main"><img src="https://img.shields.io/github/last-commit/neelbandiwadekar08-hub/job-tracker-dashboard?style=flat" alt="Last commit"></a>
-  <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue?style=flat" alt="MIT License"></a>
   <img src="https://img.shields.io/badge/React-18-61DAFB?style=flat&logo=react&logoColor=black" alt="React 18">
   <img src="https://img.shields.io/badge/Tailwind-CSS-06B6D4?style=flat&logo=tailwindcss&logoColor=white" alt="Tailwind CSS">
   <img src="https://img.shields.io/badge/Built%20with-Gemini-8E75B2?style=flat&logo=googlegemini&logoColor=white" alt="Built with Gemini">
   <img src="https://img.shields.io/badge/Storage-Local%20Only-orange?style=flat" alt="Local storage only">
 </p>
 
-<img width="1364" height="949" alt="Screenshot 2026-10-22 223136_edited" src="https://github.com/user-attachments/assets/4f582ed8-5d7f-453e-b8ed-3b792c85e5a3" />
-
-
-
+<img width="1364" height="949" alt="Screenshot 2026-10-22 223136_edited" src="https://github.com/user-attachments/assets/e2fbfb63-e7c1-4c63-be68-b9ebb7e08be9" />
 
 
 ## Why I built this
