@@ -18,12 +18,11 @@
   <img src="https://img.shields.io/badge/Storage-Local%20Only-orange?style=flat" alt="Local storage only">
 </p>
 
-<!--
-  DEMO VIDEO: delete this comment block, then drag your video file into the
-  GitHub editor at this spot. GitHub will insert the link automatically.
--->
+<img width="1364" height="949" alt="Screenshot 2026-10-22 223136_edited" src="https://github.com/user-attachments/assets/4f582ed8-5d7f-453e-b8ed-3b792c85e5a3" />
 
----
+
+
+
 
 ## Why I built this
 
