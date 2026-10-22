@@ -1,0 +1,2239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Job Tracker - Dashboard</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- React & ReactDOM Standalone CDN -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <!-- Babel Standalone to execute JSX in browser -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    /* Custom scrollbar for clean aesthetics */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(156, 163, 175, 0.4);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(107, 114, 128, 0.6);
+    }
+  </style>
+</head>
+<body class="bg-slate-50 dark:bg-zinc-950 text-slate-900 dark:text-zinc-100 min-h-screen transition-colors duration-300">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useMemo, useEffect, useRef } = React;
+
+    // ==========================================
+    // 1. INLINE SVG ICON COMPONENT HELPER
+    // ==========================================
+    const Icon = ({ name, className = "w-4 h-4", ...props }) => {
+      const icons = {
+        briefcase: (
+          <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} {...props}>
+            <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+          </svg>
+        ),
+        plus: (
+          <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} {...props}>
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+        ),
+        edit: (
+          <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} {...props}>
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+          </svg>
+        ),
+        trash: (
+          <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} {...props}>
+            <polyline points="3 6 5 6 21 6" />
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+          </svg>
+        ),
+        search: (
+          <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} {...props}>
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+        ),
+        filter: (
+          <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} {...props}>
+            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+          </svg>
+        ),
+        sun: (
+          <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} {...props}>
+            <circle cx="12" cy="12" r="5" />
+            <line x1="12" y1="1" x2="12" y2="3" />
+            <line x1="12" y1="21" x2="12" y2="23" />
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+            <line x1="1" y1="12" x2="3" y2="12" />
+            <line x1="21" y1="12" x2="23" y2="12" />
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+          </svg>
+        ),
+        moon: (
+          <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} {...props}>
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+          </svg>
+        ),
+        trendingUp: (
+          <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} {...props}>
+            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+            <polyline points="17 6 23 6 23 12" />
+          </svg>
+        ),
+        clock: (
+          <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} {...props}>
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="12 6 12 12 16 14" />
+          </svg>
+        ),
+        award: (
+          <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} {...props}>
+            <circle cx="12" cy="8" r="7" />
+            <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88" />
+          </svg>
+        ),
+        mapPin: (
+          <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} {...props}>
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+            <circle cx="12" cy="10" r="3" />
+          </svg>
+        ),
+        externalLink: (
+          <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} {...props}>
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+            <polyline points="15 3 21 3 21 9" />
+            <line x1="10" y1="14" x2="21" y2="3" />
+          </svg>
+        ),
+        refresh: (
+          <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} {...props}>
+            <polyline points="23 4 23 10 17 10" />
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+          </svg>
+        ),
+        barChart: (
+          <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} {...props}>
+            <line x1="12" y1="20" x2="12" y2="10" />
+            <line x1="18" y1="20" x2="18" y2="4" />
+            <line x1="6" y1="20" x2="6" y2="16" />
+          </svg>
+        ),
+        x: (
+          <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} {...props}>
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        ),
+        calendar: (
+          <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} {...props}>
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+            <line x1="16" y1="2" x2="16" y2="6" />
+            <line x1="8" y1="2" x2="8" y2="6" />
+            <line x1="3" y1="10" x2="21" y2="10" />
+          </svg>
+        ),
+        download: (
+          <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} {...props}>
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+        ),
+        layers: (
+          <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} {...props}>
+            <polygon points="12 2 2 7 12 12 22 7 12 2" />
+            <polyline points="2 17 12 22 22 17" />
+            <polyline points="2 12 12 17 22 12" />
+          </svg>
+        )
+      };
+      return icons[name] || null;
+    };
+
+    // ==========================================
+    // 2. TYPES AND CONSTANTS
+    // ==========================================
+    const ROLE_TYPE_LABELS = {
+      working_student: 'Working Student',
+      internship: 'Internship',
+      masters_thesis: "Master's Thesis",
+      full_time: 'Full-time',
+    };
+
+    // Exact 8 stage values in funnel
+    const STAGE_CONFIG = {
+      Applied: { label: 'Applied', isTerminal: false },
+      Rejected: { label: 'Rejected', isTerminal: true },
+      'No Answer': { label: 'No Answer', isTerminal: true },
+      Interview: { label: 'Interview', isTerminal: false },
+      'No Offer': { label: 'No Offer', isTerminal: true },
+      Offer: { label: 'Offer', isTerminal: false },
+      Accepted: { label: 'Accepted', isTerminal: true },
+      Declined: { label: 'Declined', isTerminal: true },
+    };
+
+    // Centralized Light and Dark Color Palette for Nodes/Links
+    const PALETTE = {
+      light: {
+        total: {
+          bg: '#EEF2FF',
+          text: '#3730A3',
+          border: '#C7D2FE',
+          fill: '#6366F1',
+          stroke: '#4338CA',
+        },
+        Applied: {
+          bg: '#FFFBEB',
+          text: '#92400E',
+          border: '#FDE68A',
+          fill: '#F59E0B',
+          stroke: '#D97706',
+        },
+        Rejected: { // Clear warning red
+          bg: '#FEF2F2',
+          text: '#991B1B',
+          border: '#FECACA',
+          fill: '#EF4444',
+          stroke: '#DC2626',
+        },
+        'No Answer': { // Deep maroon / oxblood tone
+          bg: '#FFF1F2',
+          text: '#881337',
+          border: '#FFE4E6',
+          fill: '#9F1239',
+          stroke: '#881337',
+        },
+        Interview: {
+          bg: '#F0F9FF',
+          text: '#075985',
+          border: '#BAE6FD',
+          fill: '#0284C7',
+          stroke: '#0369A1',
+        },
+        InterviewingActive: {
+          bg: '#E0F2FE',
+          text: '#0369A1',
+          border: '#7DD3FC',
+          fill: '#38BDF8',
+          stroke: '#0284C7',
+        },
+        'No Offer': {
+          bg: '#FDF4FF',
+          text: '#86198F',
+          border: '#F5D0FE',
+          fill: '#C026D3',
+          stroke: '#A21CAF',
+        },
+        Offer: {
+          bg: '#ECFDF5',
+          text: '#065F46',
+          border: '#A7F3D0',
+          fill: '#10B981',
+          stroke: '#059669',
+        },
+        OfferPending: {
+          bg: '#F0FDF4',
+          text: '#166534',
+          border: '#BBF7D0',
+          fill: '#34D399',
+          stroke: '#10B981',
+        },
+        Accepted: {
+          bg: '#CCFBF1',
+          text: '#115E59',
+          border: '#99F6E4',
+          fill: '#0D9488',
+          stroke: '#0F766E',
+        },
+        Declined: {
+          bg: '#F1F5F9',
+          text: '#334155',
+          border: '#CBD5E1',
+          fill: '#64748B',
+          stroke: '#475569',
+        },
+      },
+      dark: {
+        total: {
+          bg: 'rgba(99, 102, 241, 0.15)',
+          text: '#C7D2FE',
+          border: 'rgba(129, 140, 248, 0.3)',
+          fill: '#818CF8',
+          stroke: '#6366F1',
+        },
+        Applied: {
+          bg: 'rgba(245, 158, 11, 0.15)',
+          text: '#FDE68A',
+          border: 'rgba(251, 191, 36, 0.3)',
+          fill: '#FBBF24',
+          stroke: '#F59E0B',
+        },
+        Rejected: { // Warning red dark
+          bg: 'rgba(239, 68, 68, 0.15)',
+          text: '#FECACA',
+          border: 'rgba(248, 113, 113, 0.3)',
+          fill: '#F87171',
+          stroke: '#EF4444',
+        },
+        'No Answer': { // Deep Oxblood Crimson dark
+          bg: 'rgba(159, 18, 57, 0.25)',
+          text: '#FFE4E6',
+          border: 'rgba(225, 29, 72, 0.4)',
+          fill: '#E11D48',
+          stroke: '#BE123C',
+        },
+        Interview: {
+          bg: 'rgba(2, 132, 199, 0.15)',
+          text: '#BAE6FD',
+          border: 'rgba(56, 189, 248, 0.3)',
+          fill: '#38BDF8',
+          stroke: '#0284C7',
+        },
+        InterviewingActive: {
+          bg: 'rgba(56, 189, 248, 0.2)',
+          text: '#E0F2FE',
+          border: 'rgba(125, 211, 252, 0.4)',
+          fill: '#60A5FA',
+          stroke: '#3B82F6',
+        },
+        'No Offer': {
+          bg: 'rgba(192, 38, 211, 0.15)',
+          text: '#F5D0FE',
+          border: 'rgba(232, 121, 249, 0.3)',
+          fill: '#E879F9',
+          stroke: '#C026D3',
+        },
+        Offer: {
+          bg: 'rgba(16, 185, 129, 0.15)',
+          text: '#A7F3D0',
+          border: 'rgba(52, 211, 153, 0.3)',
+          fill: '#34D399',
+          stroke: '#10B981',
+        },
+        OfferPending: {
+          bg: 'rgba(52, 211, 153, 0.2)',
+          text: '#D1FAE5',
+          border: 'rgba(110, 231, 183, 0.4)',
+          fill: '#6EE7B7',
+          stroke: '#34D399',
+        },
+        Accepted: {
+          bg: 'rgba(13, 148, 136, 0.18)',
+          text: '#99F6E4',
+          border: 'rgba(45, 212, 191, 0.35)',
+          fill: '#2DD4BF',
+          stroke: '#0D9488',
+        },
+        Declined: {
+          bg: 'rgba(100, 116, 139, 0.15)',
+          text: '#E2E8F0',
+          border: 'rgba(148, 163, 184, 0.3)',
+          fill: '#94A3B8',
+          stroke: '#64748B',
+        },
+      },
+    };
+
+    // Realistic Sample Applications
+    const SAMPLE_APPLICATIONS = [
+      {
+        id: 'app-1788440761837',
+        company: 'Carl Zeiss AG',
+        position: 'Product Quality',
+        roleType: 'internship',
+        stage: 'Rejected',
+        location: 'Oberkochen, Germany',
+        appliedDate: '2026-06-15',
+        lastUpdated: '2026-09-03',
+        salaryOrStipend: '€1.650 per month',
+      },
+      {
+        id: 'app-1788440683823',
+        company: 'Dachser SE',
+        position: 'Demand Planning',
+        roleType: 'internship',
+        stage: 'Rejected',
+        location: 'Kempten, Germany',
+        appliedDate: '2026-05-08',
+        lastUpdated: '2026-09-03',
+        salaryOrStipend: '€1.600 per month',
+      },
+      {
+        id: 'app-1788440646835',
+        company: 'Deutsche Bahn',
+        position: 'Logistics & Materials Planning',
+        roleType: 'working_student',
+        stage: 'Offer',
+        location: 'Frankfurt, Germany',
+        appliedDate: '2026-05-25',
+        lastUpdated: '2026-09-03',
+        salaryOrStipend: '€20,00 per hour',
+      },
+      {
+        id: 'app-1788440619414',
+        company: 'Rolls-Royce Power Systems',
+        position: 'Process Engineering Support',
+        roleType: 'working_student',
+        stage: 'Interview',
+        location: 'Friedrichshafen, Germany',
+        appliedDate: '2026-07-10',
+        lastUpdated: '2026-09-03',
+        salaryOrStipend: '€18,50 per hour',
+      },
+      {
+        id: 'app-1788440547675',
+        company: 'Schaeffler AG',
+        position: 'Industrial Engineering',
+        roleType: 'working_student',
+        stage: 'Applied',
+        location: 'Herzogenaurach, Germany',
+        appliedDate: '2026-08-25',
+        lastUpdated: '2026-09-03',
+        salaryOrStipend: '€18,00 per hour',
+      },
+      {
+        id: 'app-1788440502024',
+        company: 'Continental AG',
+        position: 'Process Simulation',
+        roleType: 'masters_thesis',
+        stage: 'Interview',
+        location: 'Hannover, Germany',
+        appliedDate: '2026-06-20',
+        lastUpdated: '2026-09-03',
+        salaryOrStipend: '€1.550 per month',
+      },
+      {
+        id: 'app-1788440455442',
+        company: 'Bosch',
+        position: 'Continuous Improvement',
+        roleType: 'working_student',
+        stage: 'Interview',
+        location: 'Stuttgart, Germany',
+        appliedDate: '2026-06-02',
+        lastUpdated: '2026-09-03',
+        salaryOrStipend: '€19,50 per hour',
+      },
+      {
+        id: 'app-1788440415903',
+        company: 'Knorr-Bremse',
+        position: 'Statistical Process Control',
+        roleType: 'masters_thesis',
+        stage: 'Offer',
+        location: 'Munich, Germany',
+        appliedDate: '2026-05-20',
+        lastUpdated: '2026-09-03',
+        salaryOrStipend: '€1.700 per month',
+      },
+      {
+        id: 'app-1788440362488',
+        company: 'Siemens AG',
+        position: 'Manufacturing Execution Systems',
+        roleType: 'internship',
+        stage: 'Applied',
+        location: 'Erlangen, Germany',
+        appliedDate: '2026-08-18',
+        lastUpdated: '2026-09-03',
+        salaryOrStipend: '€1.700 per month',
+      },
+      {
+        id: 'app-1788440306508',
+        company: 'MAN Truck & Bus',
+        position: 'Quality Management in Production',
+        roleType: 'masters_thesis',
+        stage: 'No Offer',
+        location: 'Munich, Germany',
+        appliedDate: '2026-05-18',
+        lastUpdated: '2026-09-03',
+        salaryOrStipend: '€1.600 per month',
+      },
+      {
+        id: 'app-1788440270915',
+        company: 'Liebherr Group',
+        position: 'Lean Management',
+        roleType: 'working_student',
+        stage: 'Applied',
+        location: 'Biberach an der Riß, Germany',
+        appliedDate: '2026-08-15',
+        lastUpdated: '2026-09-03',
+        salaryOrStipend: '€18,50 per hour',
+      },
+      {
+        id: 'app-1788440242849',
+        company: 'Wacker Chemie',
+        position: 'Work Planning & Process Design',
+        roleType: 'masters_thesis',
+        stage: 'Interview',
+        location: 'Munich, Germany',
+        appliedDate: '2026-07-01',
+        lastUpdated: '2026-09-03',
+        salaryOrStipend: '€1.600 per month',
+      },
+      {
+        id: 'app-1788440192644',
+        company: 'KUKA AG',
+        position: 'Predictive Maintenance',
+        roleType: 'masters_thesis',
+        stage: 'Offer',
+        location: 'Augsburg, Germany',
+        appliedDate: '2026-05-12',
+        lastUpdated: '2026-09-03',
+        salaryOrStipend: '€1.650 per month',
+      },
+      {
+        id: 'app-1788440135255',
+        company: 'Krones AG',
+        position: 'Production Control',
+        roleType: 'internship',
+        stage: 'No Answer',
+        location: 'Neutraubling, Germany',
+        appliedDate: '2026-04-08',
+        lastUpdated: '2026-09-03',
+        salaryOrStipend: '€1.550 per month',
+      },
+      {
+        id: 'app-1788440098338',
+        company: 'Dürr AG',
+        position: 'Manufacturing Systems Engineer',
+        roleType: 'full_time',
+        stage: 'Rejected',
+        location: 'Bietigheim-Bissingen, Germany',
+        appliedDate: '2026-03-28',
+        lastUpdated: '2026-09-03',
+        salaryOrStipend: '€56.000 per year',
+      },
+      {
+        id: 'app-1788440046628',
+        company: 'Festo',
+        position: 'Shopfloor Management',
+        roleType: 'working_student',
+        stage: 'Interview',
+        location: 'Esslingen am Neckar, Germany',
+        appliedDate: '2026-07-05',
+        lastUpdated: '2026-09-03',
+        salaryOrStipend: '€18,50 per hour',
+      },
+      {
+        id: 'app-1788440018231',
+        company: 'Trumpf',
+        position: 'Process Development',
+        roleType: 'internship',
+        stage: 'Rejected',
+        location: 'Ditzingen, Germany',
+        appliedDate: '2026-03-22',
+        lastUpdated: '2026-09-03',
+        salaryOrStipend: '€1.650 per month',
+      },
+      {
+        id: 'app-1788439985959',
+        company: 'Mahle GmbH',
+        position: 'Supplier Quality',
+        roleType: 'internship',
+        stage: 'Rejected',
+        location: 'Stuttgart, Germany',
+        appliedDate: '2026-03-15',
+        lastUpdated: '2026-09-03',
+        salaryOrStipend: '€1.600 per month',
+      },
+      {
+        id: 'app-1788439951970',
+        company: 'ZF Friedrichshafen',
+        position: 'Production Planner',
+        roleType: 'full_time',
+        stage: 'No Offer',
+        location: 'Friedrichshafen, Germany',
+        appliedDate: '2026-03-10',
+        lastUpdated: '2026-09-03',
+        salaryOrStipend: '€58.000 per year',
+      },
+      {
+        id: 'app-1788439910983',
+        company: 'Voith Group',
+        position: 'Operations Analyst',
+        roleType: 'full_time',
+        stage: 'Applied',
+        location: 'Heidenheim, Germany',
+        appliedDate: '2026-08-10',
+        lastUpdated: '2026-09-03',
+        salaryOrStipend: '€60.000 per year',
+      },
+      {
+        id: 'app-1788439866199',
+        company: 'Heidelberger Druckmaschinen',
+        position: 'Kaizen & Shopfloor Improvement',
+        roleType: 'working_student',
+        stage: 'No Offer',
+        location: 'Heidelberg, Germany',
+        appliedDate: '2026-04-15',
+        lastUpdated: '2026-09-03',
+        salaryOrStipend: '€18,00 per hour',
+      },
+      {
+        id: 'app-1788439835022',
+        company: 'Salzgitter AG',
+        position: 'Process Optimization in Manufacturing',
+        roleType: 'masters_thesis',
+        stage: 'Accepted',
+        location: 'Salzgitter, Germany',
+        appliedDate: '2026-02-20',
+        lastUpdated: '2026-09-03',
+        salaryOrStipend: '€1.600 per month',
+      },
+      {
+        id: 'app-1788439777406',
+        company: 'ThyssenKrupp',
+        position: 'Continuous Improvement',
+        roleType: 'internship',
+        stage: 'Applied',
+        location: 'Essen, Germany',
+        appliedDate: '2026-08-20',
+        lastUpdated: '2026-09-03',
+        salaryOrStipend: '€1.600 per month',
+      },
+      {
+        id: 'app-1788439741211',
+        company: 'BASF',
+        position: 'Process Engineer',
+        roleType: 'full_time',
+        stage: 'Interview',
+        location: 'Ludwigshafen, Germany',
+        appliedDate: '2026-06-25',
+        lastUpdated: '2026-09-03',
+        salaryOrStipend: '€64.000 per year',
+      },
+      {
+        id: 'app-1788439700074',
+        company: 'Evonik Industries',
+        position: 'Production Scheduling',
+        roleType: 'working_student',
+        stage: 'No Offer',
+        location: 'Essen, Germany',
+        appliedDate: '2026-05-02',
+        lastUpdated: '2026-09-03',
+        salaryOrStipend: '€18,00 per hour',
+      },
+      {
+        id: 'app-1788439653424',
+        company: 'Daimler Truck',
+        position: 'Project Engineer',
+        roleType: 'full_time',
+        stage: 'Applied',
+        location: 'Stuttgart, Germany',
+        appliedDate: '2026-08-22',
+        lastUpdated: '2026-09-03',
+        salaryOrStipend: '€66.000 per year',
+      },
+      {
+        id: 'app-1788439623095',
+        company: 'Alstom Deutschland',
+        position: 'Production System',
+        roleType: 'internship',
+        stage: 'Rejected',
+        location: 'Salzgitter, Germany',
+        appliedDate: '2026-04-25',
+        lastUpdated: '2026-09-03',
+        salaryOrStipend: '€1.650 per month',
+      },
+      {
+        id: 'app-1788439595107',
+        company: 'Grohe AG',
+        position: 'Supply Chain Analyst',
+        roleType: 'full_time',
+        stage: 'Declined',
+        location: 'Hemer, Germany',
+        appliedDate: '2026-02-15',
+        lastUpdated: '2026-09-03',
+        salaryOrStipend: '€55.000 per year',
+      },
+      {
+        id: 'app-1788439560029',
+        company: 'Bosch Rexroth',
+        position: 'Automation Engineering',
+        roleType: 'internship',
+        stage: 'Interview',
+        location: 'Lohr am Main, Germany',
+        appliedDate: '2026-06-30',
+        lastUpdated: '2026-09-03',
+        salaryOrStipend: '€1.700 per month',
+      },
+      {
+        id: 'app-1788439524823',
+        company: 'DHL Supply Chain',
+        position: 'Inventory Optimization',
+        roleType: 'masters_thesis',
+        stage: 'Accepted',
+        location: 'Bonn, Germany',
+        appliedDate: '2026-03-05',
+        lastUpdated: '2026-09-03',
+        salaryOrStipend: '€1.700 per month',
+      },
+      {
+        id: 'app-1788439488485',
+        company: 'Rheinmetall',
+        position: 'Industrial Engineer',
+        roleType: 'full_time',
+        stage: 'No Answer',
+        location: 'Düsseldorf, Germany',
+        appliedDate: '2026-04-30',
+        lastUpdated: '2026-09-03',
+        salaryOrStipend: '€62.000 per year',
+      },
+      {
+        id: 'app-1788439446748',
+        company: 'SMS group',
+        position: 'Work Planning',
+        roleType: 'working_student',
+        stage: 'Applied',
+        location: 'Düsseldorf, Germany',
+        appliedDate: '2026-08-28',
+        lastUpdated: '2026-09-03',
+        salaryOrStipend: '€19,00 per hour',
+      },
+      {
+        id: 'app-1788439406000',
+        company: 'Weidmüller Group',
+        position: 'Digital Transformation',
+        roleType: 'internship',
+        stage: 'Applied',
+        location: 'Detmold, Germany',
+        appliedDate: '2026-08-12',
+        lastUpdated: '2026-09-03',
+        salaryOrStipend: '€1.650 per month',
+      },
+      {
+        id: 'app-1788439376798',
+        company: 'Homag Group',
+        position: 'Lean Management',
+        roleType: 'masters_thesis',
+        stage: 'Rejected',
+        location: 'Schopfloch, Germany',
+        appliedDate: '2026-04-12',
+        lastUpdated: '2026-09-03',
+        salaryOrStipend: '€1.600 per month',
+      },
+      {
+        id: 'app-1788439332027',
+        company: 'Jungheinrich AG',
+        position: 'Plant Operations',
+        roleType: 'working_student',
+        stage: 'Applied',
+        location: 'Hamburg, Germany',
+        appliedDate: '2026-08-05',
+        lastUpdated: '2026-09-03',
+        salaryOrStipend: '€19,00 per hour',
+      },
+      {
+        id: 'app-1788439302179',
+        company: 'Kärcher',
+        position: 'Quality Engineer',
+        roleType: 'full_time',
+        stage: 'Interview',
+        location: 'Winnenden, Germany',
+        appliedDate: '2026-07-20',
+        lastUpdated: '2026-09-03',
+        salaryOrStipend: '€61.000 per year',
+      },
+      {
+        id: 'app-1788439251562',
+        company: 'Claas Group',
+        position: 'Production Planning',
+        roleType: 'internship',
+        stage: 'No Answer',
+        location: 'Harsewinkel, Germany',
+        appliedDate: '0005-04-14',
+        lastUpdated: '2026-09-03',
+        salaryOrStipend: '€1.550 per month',
+      },
+      {
+        id: 'app-1788439222460',
+        company: 'Freudenberg Group',
+        position: 'Process Optimization',
+        roleType: 'masters_thesis',
+        stage: 'No Offer',
+        location: 'Weinheim, Germany',
+        appliedDate: '2026-05-28',
+        lastUpdated: '2026-09-03',
+        salaryOrStipend: '€1.550 per month',
+      },
+      {
+        id: 'app-1788439175745',
+        company: 'Hella GmbH',
+        position: 'Smart Factory & Automation',
+        roleType: 'working_student',
+        stage: 'Interview',
+        location: 'Lippstadt, Germany',
+        appliedDate: '2026-08-01',
+        lastUpdated: '2026-09-03',
+        salaryOrStipend: '€18,50 per hour',
+      },
+      {
+        id: 'app-1788439129707',
+        company: 'Carl Zeiss AG',
+        position: 'Product Quality',
+        roleType: 'internship',
+        stage: 'Interview',
+        location: 'Oberkochen, Germany',
+        appliedDate: '2026-06-15',
+        lastUpdated: '2026-09-03',
+        salaryOrStipend: '€1.650 per month',
+      },
+      {
+        id: 'app-1788439097707',
+        company: 'GEA Group',
+        position: 'Performance Improvement Analyst',
+        roleType: 'full_time',
+        stage: 'Applied',
+        location: 'Düsseldorf, Germany',
+        appliedDate: '2026-08-14',
+        lastUpdated: '2026-09-03',
+        salaryOrStipend: '€63.000 per year',
+      },
+      {
+        id: 'app-1788439057603',
+        company: 'SICK AG',
+        position: 'Quality Assurance',
+        roleType: 'working_student',
+        stage: 'No Answer',
+        location: 'Waldkirch, Germany',
+        appliedDate: '2026-04-18',
+        lastUpdated: '2026-09-03',
+        salaryOrStipend: '€19,00 per hour',
+      },
+      {
+        id: 'app-1788439023074',
+        company: 'Viessmann Group',
+        position: 'Operations Strategy & Solutions',
+        roleType: 'masters_thesis',
+        stage: 'Rejected',
+        location: 'Allendorf (Eder), Germany',
+        appliedDate: '2026-04-22',
+        lastUpdated: '2026-09-03',
+        salaryOrStipend: '€1.600 per month',
+      },
+      {
+        id: 'app-1788438989954',
+        company: 'Deutz AG',
+        position: 'New Product Introduction',
+        roleType: 'internship',
+        stage: 'Applied',
+        location: 'Cologne, Germany',
+        appliedDate: '2026-08-06',
+        lastUpdated: '2026-09-03',
+        salaryOrStipend: '€1.600 per month',
+      },
+      {
+        id: 'app-1788438940676',
+        company: 'SEW-Eurodrive',
+        position: 'Business Transformation',
+        roleType: 'working_student',
+        stage: 'Interview',
+        location: 'Bruchsal, Germany',
+        appliedDate: '2026-07-15',
+        lastUpdated: '2026-09-03',
+        salaryOrStipend: '€18,50 per hour',
+      },
+      {
+        id: 'app-1788438897650',
+        company: 'Stihl',
+        position: 'Product Design for Manufacturing',
+        roleType: 'internship',
+        stage: 'No Answer',
+        location: 'Waiblingen, Germany',
+        appliedDate: '2026-05-10',
+        lastUpdated: '2026-09-03',
+        salaryOrStipend: '€1.550 per month',
+      },
+      {
+        id: 'app-1788438859785',
+        company: 'Vaillant Group',
+        position: 'Demand Planner',
+        roleType: 'full_time',
+        stage: 'Applied',
+        location: 'Remscheid, Germany',
+        appliedDate: '2026-08-20',
+        lastUpdated: '2026-09-03',
+        salaryOrStipend: '€59.000 per year',
+      },
+      {
+        id: 'app-1788438824587',
+        company: 'ElringKlinger AG',
+        position: 'Production Control',
+        roleType: 'working_student',
+        stage: 'No Offer',
+        location: 'Dettingen an der Erms, Germany',
+        appliedDate: '2026-05-22',
+        lastUpdated: '2026-09-03',
+        salaryOrStipend: '€18,00 per hour',
+      },
+      {
+        id: 'app-1788438609904',
+        company: 'Eberspächer Group',
+        position: 'Capacity Planning',
+        roleType: 'masters_thesis',
+        stage: 'Accepted',
+        location: 'Esslingen am Neckar, Germany',
+        appliedDate: '2026-03-10',
+        lastUpdated: '2026-09-03',
+        salaryOrStipend: '€1.650 per month',
+      },
+      {
+        id: 'app-1788438563866',
+        company: 'Phoenix Contact',
+        position: 'Automation Engineer',
+        roleType: 'full_time',
+        stage: 'Interview',
+        location: 'Blomberg, Germany',
+        appliedDate: '2026-07-25',
+        lastUpdated: '2026-09-03',
+        salaryOrStipend: '€62.000 per year',
+      },
+      {
+        id: 'app-1788438502926',
+        company: 'Rittal',
+        position: 'Supplier Quality',
+        roleType: 'working_student',
+        stage: 'Applied',
+        location: 'Herborn, Germany',
+        appliedDate: '2026-08-10',
+        lastUpdated: '2026-09-03',
+        salaryOrStipend: '€18,50 per hour',
+      },
+      {
+        id: 'app-1788438449376',
+        company: 'Aurubis AG',
+        position: 'Operations Research',
+        roleType: 'masters_thesis',
+        stage: 'No Answer',
+        location: 'Hamburg, Germany',
+        appliedDate: '2026-04-25',
+        lastUpdated: '2026-09-03',
+        salaryOrStipend: '€1.600 per month',
+      },
+    ];
+
+    // ==========================================
+    // 3. HAND-BUILT SANKEY SVG SUBCOMPONENT
+    // ==========================================
+    const CustomSankeyChart = ({ applications, isDark, selectedStageFilter, onSelectStage }) => {
+      const [hoveredNodeId, setHoveredNodeId] = useState(null);
+      const [hoveredLinkId, setHoveredLinkId] = useState(null);
+      const [tooltip, setTooltip] = useState({ show: false, x: 0, y: 0, label: '', value: 0 });
+      const themePalette = PALETTE[isDark ? 'dark' : 'light'];
+
+      // FIXED CANVAS DIMENSIONS - Size NEVER changes on filter or data update
+      const SVG_WIDTH = 1000;
+      const SVG_HEIGHT = 420;
+      // Increased left margin so first column label fits, and enough right margin for last column
+      const MARGIN = { top: 45, right: 120, bottom: 35, left: 60 };
+      const NODE_WIDTH = 22;
+
+      // Deterministic layout calculations
+      const { nodes, links, totalApps } = useMemo(() => {
+        const total = applications.length;
+        if (total === 0) return { nodes: [], links: [], totalApps: 0 };
+
+        // Stage Counts
+        const appliedPending = applications.filter((a) => a.stage === 'Applied').length;
+        const rejected = applications.filter((a) => a.stage === 'Rejected').length;
+        const noAnswer = applications.filter((a) => a.stage === 'No Answer').length;
+
+        // Interview branch includes: Interview, No Offer, Offer, Accepted, Declined
+        const reachedInterview = applications.filter((a) =>
+          ['Interview', 'No Offer', 'Offer', 'Accepted', 'Declined'].includes(a.stage)
+        ).length;
+
+        const interviewingActive = applications.filter((a) => a.stage === 'Interview').length;
+        const noOffer = applications.filter((a) => a.stage === 'No Offer').length;
+
+        // Offer branch includes: Offer, Accepted, Declined
+        const reachedOffer = applications.filter((a) =>
+          ['Offer', 'Accepted', 'Declined'].includes(a.stage)
+        ).length;
+
+        const offerPending = applications.filter((a) => a.stage === 'Offer').length;
+        const accepted = applications.filter((a) => a.stage === 'Accepted').length;
+        const declined = applications.filter((a) => a.stage === 'Declined').length;
+
+        // Raw Node definitions across 4 level columns
+        const rawNodes = [
+          // Column 0
+          { id: 'root', name: 'Applications', count: total, col: 0, colorKey: 'total' },
+
+          // Column 1
+          { id: 'col1-applied', name: 'Applied', count: appliedPending, col: 1, colorKey: 'Applied' },
+          { id: 'col1-rejected', name: 'Rejected', count: rejected, col: 1, colorKey: 'Rejected' },
+          { id: 'col1-noanswer', name: 'No Answer', count: noAnswer, col: 1, colorKey: 'No Answer' },
+          { id: 'col1-interview', name: 'Interview', count: reachedInterview, col: 1, colorKey: 'Interview' },
+
+          // Column 2
+          { id: 'col2-interviewing', name: 'Interviewing', count: interviewingActive, col: 2, colorKey: 'InterviewingActive' },
+          { id: 'col2-nooffer', name: 'No Offer', count: noOffer, col: 2, colorKey: 'No Offer' },
+          { id: 'col2-offer', name: 'Offer', count: reachedOffer, col: 2, colorKey: 'Offer' },
+
+          // Column 3
+          { id: 'col3-pendingoffer', name: 'Offer Received', count: offerPending, col: 3, colorKey: 'OfferPending' },
+          { id: 'col3-accepted', name: 'Accepted', count: accepted, col: 3, colorKey: 'Accepted' },
+          { id: 'col3-declined', name: 'Declined', count: declined, col: 3, colorKey: 'Declined' },
+        ];
+
+        // HIDE BRANCHES/NODES WITH COUNT OF 0 (No ghost nodes)
+        const activeNodes = rawNodes.filter((n) => n.count > 0);
+
+        // Link definitions
+        const rawLinks = [
+          // Col 0 -> Col 1
+          { source: 'root', target: 'col1-applied', value: appliedPending, colorKey: 'Applied' },
+          { source: 'root', target: 'col1-rejected', value: rejected, colorKey: 'Rejected' },
+          { source: 'root', target: 'col1-noanswer', value: noAnswer, colorKey: 'No Answer' },
+          { source: 'root', target: 'col1-interview', value: reachedInterview, colorKey: 'Interview' },
+
+          // Col 1 -> Col 2
+          { source: 'col1-interview', target: 'col2-interviewing', value: interviewingActive, colorKey: 'InterviewingActive' },
+          { source: 'col1-interview', target: 'col2-nooffer', value: noOffer, colorKey: 'No Offer' },
+          { source: 'col1-interview', target: 'col2-offer', value: reachedOffer, colorKey: 'Offer' },
+
+          // Col 2 -> Col 3
+          { source: 'col2-offer', target: 'col3-pendingoffer', value: offerPending, colorKey: 'OfferPending' },
+          { source: 'col2-offer', target: 'col3-accepted', value: accepted, colorKey: 'Accepted' },
+          { source: 'col2-offer', target: 'col3-declined', value: declined, colorKey: 'Declined' },
+        ].filter((l) => l.value > 0);
+
+        // Geometry Math
+        const availWidth = SVG_WIDTH - MARGIN.left - MARGIN.right;
+        const availHeight = SVG_HEIGHT - MARGIN.top - MARGIN.bottom;
+        const colStep = availWidth / 3;
+
+        // Scale factor: canvas available height mapped to total applications count
+        const scale = availHeight / total;
+
+        // Stack nodes inside columns
+        const colsMap = { 0: [], 1: [], 2: [], 3: [] };
+        activeNodes.forEach((n) => colsMap[n.col].push(n));
+
+        const computedNodesMap = new Map();
+        const nodeGap = 16; // vertical gap in px
+
+        [0, 1, 2, 3].forEach((c) => {
+          const colNodes = colsMap[c];
+          if (colNodes.length === 0) return;
+
+          const totalGap = (colNodes.length - 1) * nodeGap;
+          const totalColCount = colNodes.reduce((acc, curr) => acc + curr.count, 0);
+          const totalColHeight = totalColCount * scale;
+
+          let currentY = MARGIN.top + (availHeight - (totalColHeight + totalGap)) / 2;
+          const x = MARGIN.left + c * colStep - NODE_WIDTH / 2;
+
+          colNodes.forEach((n) => {
+            const h = Math.max(12, n.count * scale);
+            const nodeObj = {
+              id: n.id,
+              name: n.name,
+              count: n.count,
+              column: n.col,
+              colorKey: n.colorKey,
+              x,
+              y: currentY,
+              width: NODE_WIDTH,
+              height: h,
+            };
+            computedNodesMap.set(n.id, nodeObj);
+            currentY += h + nodeGap;
+          });
+        });
+
+        // Track Y offsets for rendering link ribbons
+        const sourceOffsets = new Map();
+        const targetOffsets = new Map();
+
+        computedNodesMap.forEach((n) => {
+          sourceOffsets.set(n.id, n.y);
+          targetOffsets.set(n.id, n.y);
+        });
+
+        const computedLinks = [];
+        rawLinks.forEach((link) => {
+          const src = computedNodesMap.get(link.source);
+          const tgt = computedNodesMap.get(link.target);
+          if (!src || !tgt) return;
+
+          const thickness = link.value * scale;
+          const sy = sourceOffsets.get(link.source) || src.y;
+          const ty = targetOffsets.get(link.target) || tgt.y;
+
+          sourceOffsets.set(link.source, sy + thickness);
+          targetOffsets.set(link.target, ty + thickness);
+
+          computedLinks.push({
+            id: `link-${link.source}-${link.target}`,
+            sourceId: link.source,
+            targetId: link.target,
+            value: link.value,
+            colorKey: link.colorKey,
+            sy,
+            ty,
+            thickness,
+          });
+        });
+
+        return {
+          nodes: Array.from(computedNodesMap.values()),
+          links: computedLinks,
+          totalApps: total,
+        };
+      }, [applications, SVG_WIDTH, SVG_HEIGHT, MARGIN]);
+
+      // Bezier Path generator for smooth Sankey links
+      const renderLinkPath = (link, sourceNode, targetNode) => {
+        const x0 = sourceNode.x + sourceNode.width;
+        const x1 = targetNode.x;
+        const dx = (x1 - x0) * 0.5;
+
+        const y0Top = link.sy;
+        const y0Bot = link.sy + link.thickness;
+        const y1Top = link.ty;
+        const y1Bot = link.ty + link.thickness;
+
+        return `
+          M ${x0} ${y0Top}
+          C ${x0 + dx} ${y0Top}, ${x1 - dx} ${y1Top}, ${x1} ${y1Top}
+          L ${x1} ${y1Bot}
+          C ${x1 - dx} ${y1Bot}, ${x0 + dx} ${y0Bot}, ${x0} ${y0Bot}
+          Z
+        `;
+      };
+
+      const handleNodeClick = (node) => {
+        const stageMap = {
+          root: 'ALL',
+          'col1-applied': 'Applied',
+          'col1-rejected': 'Rejected',
+          'col1-noanswer': 'No Answer',
+          'col1-interview': 'Interview',
+          'col2-interviewing': 'Interview',
+          'col2-nooffer': 'No Offer',
+          'col2-offer': 'Offer',
+          'col3-pendingoffer': 'Offer',
+          'col3-accepted': 'Accepted',
+          'col3-declined': 'Declined',
+        };
+        onSelectStage(stageMap[node.id] || 'ALL');
+      };
+
+      const handleMouseMoveTooltip = (e, label, value) => {
+        setTooltip({
+          show: true,
+          x: e.clientX,
+          y: e.clientY,
+          label,
+          value,
+        });
+      };
+
+      const handleMouseLeaveTooltip = () => {
+        setTooltip({ ...tooltip, show: false });
+      };
+
+      if (totalApps === 0) {
+        return (
+          <div className={`w-full h-80 rounded-3xl border flex flex-col items-center justify-center p-8 text-center transition-all ${
+            isDark ? 'bg-zinc-900/50 border-zinc-800 text-zinc-400' : 'bg-slate-50 border-slate-200 text-slate-500'
+          }`}>
+            <Icon name="layers" className="w-12 h-12 mb-3 stroke-1 opacity-50" />
+            <h3 className="font-semibold text-base mb-1">No Applications Match Active Filter</h3>
+            <p className="text-xs max-w-sm">
+              Adjust your role or stage filter to restore application funnel analytics.
+            </p>
+          </div>
+        );
+      }
+
+      return (
+        <div className={`relative w-full overflow-hidden rounded-3xl border backdrop-blur-xl transition-all ${
+          isDark ? 'bg-zinc-900/70 border-zinc-800/90 shadow-2xl shadow-black/50' : 'bg-white/80 border-slate-200/90 shadow-xl shadow-slate-100'
+        }`}>
+          
+          {/* Custom Tooltip */}
+          {tooltip.show && (
+            <div
+              className={`fixed z-50 pointer-events-none px-3.5 py-2.5 rounded-2xl shadow-xl backdrop-blur-md border ${
+                isDark ? 'bg-zinc-800/95 border-zinc-700 text-zinc-100' : 'bg-white/95 border-slate-200 text-slate-800'
+              }`}
+              style={{ left: tooltip.x + 15, top: tooltip.y + 15 }}
+            >
+              <div className={`text-[11px] font-medium mb-1 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+                {tooltip.label}
+              </div>
+              <div className="text-sm font-bold flex items-center gap-1.5">
+                {tooltip.value} <span className={`text-xs font-normal ${isDark ? 'text-zinc-500' : 'text-slate-400'}`}>applications</span>
+              </div>
+            </div>
+          )}
+
+          {/* Card Header */}
+          <div className="px-6 pt-5 pb-3 flex items-center justify-between border-b border-inherit">
+            <div className="flex items-center gap-3">
+              <div className={`p-2.5 rounded-2xl ${isDark ? 'bg-indigo-500/10 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}>
+                <Icon name="barChart" className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className={`font-bold text-base tracking-tight ${isDark ? 'text-zinc-100' : 'text-slate-800'}`}>
+                  Application Flow
+                </h2>
+                <p className={`text-xs ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+                  Click any stage to filter your list
+                </p>
+              </div>
+            </div>
+
+            {selectedStageFilter !== 'ALL' && (
+              <button
+                onClick={() => onSelectStage('ALL')}
+                className={`text-xs px-3.5 py-1.5 rounded-xl flex items-center gap-1.5 font-medium transition-all ${
+                  isDark
+                    ? 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700 hover:text-white'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                }`}
+              >
+                <Icon name="refresh" className="w-3.5 h-3.5" />
+                Reset Filter ({selectedStageFilter})
+              </button>
+            )}
+          </div>
+
+          {/* SVG Diagram Container */}
+          <div className="w-full overflow-x-auto p-4 flex justify-center items-center">
+            <svg
+              viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
+              className="w-full h-auto max-w-5xl select-none"
+              style={{ maxHeight: '420px' }}
+            >
+              <defs>
+                <filter id="glow-light" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation="3" result="blur" />
+                  <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                </filter>
+                <filter id="glow-dark" x="-30%" y="-30%" width="160%" height="160%">
+                  <feGaussianBlur stdDeviation="5" result="blur" />
+                  <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                </filter>
+              </defs>
+
+              {/* Render Links */}
+              <g className="sankey-links">
+                {links.map((link) => {
+                  const src = nodes.find((n) => n.id === link.sourceId);
+                  const tgt = nodes.find((n) => n.id === link.targetId);
+                  if (!src || !tgt) return null;
+
+                  const isHighlighted =
+                    hoveredLinkId === link.id ||
+                    hoveredNodeId === link.sourceId ||
+                    hoveredNodeId === link.targetId;
+
+                  const colorDef = themePalette[link.colorKey] || themePalette.total;
+                  const pathD = renderLinkPath(link, src, tgt);
+
+                  return (
+                    <path
+                      key={link.id}
+                      d={pathD}
+                      fill={colorDef.fill}
+                      fillOpacity={isHighlighted ? (isDark ? 0.65 : 0.5) : isDark ? 0.28 : 0.2}
+                      stroke={colorDef.stroke}
+                      strokeWidth={isHighlighted ? 1.5 : 0.5}
+                      strokeOpacity={isHighlighted ? 0.9 : 0.3}
+                      className="cursor-pointer transition-all duration-200"
+                      onMouseMove={(e) => {
+                        setHoveredLinkId(link.id);
+                        handleMouseMoveTooltip(e, `${src.name} to ${tgt.name}`, link.value);
+                      }}
+                      onMouseLeave={() => {
+                        setHoveredLinkId(null);
+                        handleMouseLeaveTooltip();
+                      }}
+                    />
+                  );
+                })}
+              </g>
+
+              {/* Render Nodes */}
+              <g className="sankey-nodes">
+                {nodes.map((node) => {
+                  const colorDef = themePalette[node.colorKey] || themePalette.total;
+                  const isHovered = hoveredNodeId === node.id;
+                  const isSelected =
+                    (selectedStageFilter !== 'ALL' && node.name.includes(selectedStageFilter)) ||
+                    (selectedStageFilter === 'ALL' && node.id === 'root');
+
+                  return (
+                    <g
+                      key={node.id}
+                      transform={`translate(${node.x}, ${node.y})`}
+                      className="cursor-pointer group"
+                      onMouseMove={(e) => {
+                        setHoveredNodeId(node.id);
+                        handleMouseMoveTooltip(e, node.name, node.count);
+                      }}
+                      onMouseLeave={() => {
+                        setHoveredNodeId(null);
+                        handleMouseLeaveTooltip();
+                      }}
+                      onClick={() => handleNodeClick(node)}
+                    >
+                      <rect
+                        width={node.width}
+                        height={node.height}
+                        rx={6}
+                        ry={6}
+                        fill={colorDef.fill}
+                        stroke={isSelected ? (isDark ? '#FFFFFF' : '#000000') : colorDef.stroke}
+                        strokeWidth={isSelected || isHovered ? 2.5 : 1.2}
+                        className="transition-all duration-200"
+                        style={{
+                          filter: isHovered ? (isDark ? 'url(#glow-dark)' : 'url(#glow-light)') : 'none',
+                        }}
+                      />
+
+                      {/* Node Labels positioned consistently to the right of every node */}
+                      <g transform={`translate(${node.width + 12}, ${node.height / 2})`}>
+                        <text
+                          textAnchor="start"
+                          alignmentBaseline="middle"
+                          dy="0.1em"
+                          className={`font-semibold text-xs transition-colors ${
+                            isDark ? 'fill-zinc-200' : 'fill-slate-800'
+                          }`}
+                        >
+                          {node.name}
+                        </text>
+                      </g>
+                    </g>
+                  );
+                })}
+              </g>
+            </svg>
+          </div>
+        </div>
+      );
+    };
+
+    // ==========================================
+    // 4. LOCALLY-COMPUTED STAT CARDS
+    // ==========================================
+    const StatCards = ({ applications, isDark }) => {
+      const stats = useMemo(() => {
+        const total = applications.length;
+        if (total === 0) {
+          return { total: 0, interviewRate: 0, offerRate: 0, avgResponseDays: 0, activeCount: 0 };
+        }
+
+        const interviewCount = applications.filter((a) =>
+          ['Interview', 'No Offer', 'Offer', 'Accepted', 'Declined'].includes(a.stage)
+        ).length;
+
+        const offerCount = applications.filter((a) =>
+          ['Offer', 'Accepted', 'Declined'].includes(a.stage)
+        ).length;
+
+        const interviewRate = Math.round((interviewCount / total) * 100);
+        const offerRate = interviewCount > 0 ? Math.round((offerCount / interviewCount) * 100) : 0;
+
+        const appsWithDays = applications.filter((a) => a.responseDays && a.responseDays > 0);
+        const avgResponseDays =
+          appsWithDays.length > 0
+            ? Math.round(appsWithDays.reduce((acc, curr) => acc + (curr.responseDays || 0), 0) / appsWithDays.length)
+            : 8;
+
+        const activeCount = applications.filter((a) =>
+          ['Applied', 'Interview', 'Offer'].includes(a.stage)
+        ).length;
+
+        return {
+          total,
+          interviewRate,
+          offerRate,
+          avgResponseDays,
+          activeCount,
+        };
+      }, [applications]);
+
+      const items = [
+        {
+          title: 'Total Applications',
+          value: stats.total.toString(),
+          subtitle: `${stats.activeCount} currently active`,
+          icon: 'briefcase',
+        },
+        {
+          title: 'Interview Rate',
+          value: `${stats.interviewRate}%`,
+          subtitle: 'Reached interview stage',
+          icon: 'trendingUp',
+        },
+        {
+          title: 'Offer Conversion',
+          value: `${stats.offerRate}%`,
+          subtitle: 'Interviews converted to offer',
+          icon: 'award',
+        },
+        {
+          title: 'Avg. Response Time',
+          value: `${stats.avgResponseDays} days`,
+          subtitle: 'First reply from employer',
+          icon: 'clock',
+        },
+      ];
+
+      return (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {items.map((item, idx) => (
+            <div
+              key={idx}
+              className={`p-5 rounded-3xl border backdrop-blur-xl transition-all hover:scale-[1.01] ${
+                isDark
+                  ? 'bg-zinc-900/70 border-zinc-800/90 shadow-lg shadow-black/20'
+                  : 'bg-white/80 border-slate-200/90 shadow-md shadow-slate-100'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <span className={`text-[11px] font-semibold uppercase tracking-wider ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+                  {item.title}
+                </span>
+                <div
+                  className={`p-2.5 rounded-2xl ${
+                    isDark ? 'bg-zinc-800/80 text-zinc-200' : 'bg-slate-100 text-slate-700'
+                  }`}
+                >
+                  <Icon name={item.icon} className="w-4 h-4" />
+                </div>
+              </div>
+              <div className={`text-2xl font-extrabold tracking-tight mb-1 ${isDark ? 'text-zinc-100' : 'text-slate-900'}`}>
+                {item.value}
+              </div>
+              <div className={`text-xs ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>{item.subtitle}</div>
+            </div>
+          ))}
+        </div>
+      );
+    };
+
+    // ==========================================
+    // 5. FILTER TOOLBAR COMPONENT
+    // ==========================================
+    const FilterToolbar = ({
+      selectedRole,
+      onSelectRole,
+      selectedStage,
+      onSelectStage,
+      searchQuery,
+      onSearchChange,
+      isDark,
+      onOpenAddModal,
+      onExportData,
+      onResetSampleData,
+    }) => {
+      const roles = [
+        { value: 'ALL', label: 'All Roles' },
+        { value: 'working_student', label: 'Working Student' },
+        { value: 'internship', label: 'Internship' },
+        { value: 'masters_thesis', label: "Master's Thesis" },
+        { value: 'full_time', label: 'Full-time' },
+      ];
+
+      const stages = [
+        'ALL',
+        'Applied',
+        'Interview',
+        'Offer',
+        'Accepted',
+        'Rejected',
+        'No Offer',
+        'No Answer',
+        'Declined',
+      ];
+
+      return (
+        <div
+          className={`p-4 rounded-3xl border backdrop-blur-xl flex flex-col lg:flex-row gap-4 justify-between items-stretch lg:items-center ${
+            isDark ? 'bg-zinc-900/70 border-zinc-800/90' : 'bg-white/80 border-slate-200/90 shadow-sm'
+          }`}
+        >
+          {/* Role selector pills */}
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className={`text-xs font-semibold mr-1 flex items-center gap-1 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+              <Icon name="filter" className="w-3.5 h-3.5" /> Role:
+            </span>
+            {roles.map((r) => {
+              const isActive = selectedRole === r.value;
+              return (
+                <button
+                  key={r.value}
+                  onClick={() => onSelectRole(r.value)}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-xl transition-all whitespace-nowrap ${
+                    isActive
+                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20'
+                      : isDark
+                      ? 'bg-zinc-800/70 text-zinc-300 hover:bg-zinc-700'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  }`}
+                >
+                  {r.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Search, Stage Filter & Actions */}
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5">
+            <div className="relative flex-1 sm:w-44">
+              <Icon name="search" className={`w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 ${isDark ? 'text-zinc-500' : 'text-slate-400'}`} />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => onSearchChange(e.target.value)}
+                placeholder="Search company, position..."
+                className={`w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border outline-none transition-all ${
+                  isDark
+                    ? 'bg-zinc-800/80 border-zinc-700 text-zinc-200 focus:border-indigo-500'
+                    : 'bg-slate-50 border-slate-200 text-slate-800 focus:border-indigo-500'
+                }`}
+              />
+            </div>
+
+            <select
+              value={selectedStage}
+              onChange={(e) => onSelectStage(e.target.value)}
+              className={`px-3 py-1.5 text-xs rounded-xl border outline-none font-medium cursor-pointer transition-all ${
+                isDark
+                  ? 'bg-zinc-800 border-zinc-700 text-zinc-200 focus:border-indigo-500'
+                  : 'bg-slate-50 border-slate-200 text-slate-800 focus:border-indigo-500'
+              }`}
+            >
+              <option value="ALL">All Stages</option>
+              {stages.filter((s) => s !== 'ALL').map((stg) => (
+                <option key={stg} value={stg}>
+                  Stage: {stg}
+                </option>
+              ))}
+            </select>
+
+            <button
+              onClick={onExportData}
+              title="Export Applications as JSON"
+              className={`p-2 rounded-xl border transition-all ${
+                isDark
+                  ? 'bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700'
+                  : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200'
+              }`}
+            >
+              <Icon name="download" className="w-4 h-4" />
+            </button>
+
+            <button
+              onClick={onOpenAddModal}
+              className="px-4 py-1.5 text-xs font-semibold rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white flex items-center gap-1.5 shadow-md shadow-indigo-600/30 transition-all active:scale-95 whitespace-nowrap"
+            >
+              <Icon name="plus" className="w-4 h-4" />
+              Add Job
+            </button>
+          </div>
+        </div>
+      );
+    };
+
+    // ==========================================
+    // 6. JOB APPLICATION TABLE / GRID
+    // ==========================================
+    const JobGrid = ({ applications, isDark, onEdit, onDelete }) => {
+      const themePalette = PALETTE[isDark ? 'dark' : 'light'];
+
+      if (applications.length === 0) {
+        return (
+          <div
+            className={`p-12 rounded-3xl border text-center ${
+              isDark ? 'bg-zinc-900/40 border-zinc-800 text-zinc-400' : 'bg-slate-50 border-slate-200 text-slate-500'
+            }`}
+          >
+            <Icon name="briefcase" className="w-10 h-10 mx-auto mb-3 stroke-1 opacity-40" />
+            <p className="font-semibold text-sm">No applications match active criteria</p>
+            <p className="text-xs mt-1">Try resetting search filters or adding a new application.</p>
+          </div>
+        );
+      }
+
+      return (
+        <div
+          className={`rounded-3xl border overflow-hidden backdrop-blur-xl transition-all ${
+            isDark ? 'bg-zinc-900/70 border-zinc-800/90 shadow-xl' : 'bg-white/80 border-slate-200/90 shadow-md'
+          }`}
+        >
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr
+                  className={`text-[11px] font-semibold tracking-wider uppercase border-b ${
+                    isDark ? 'bg-zinc-900/90 border-zinc-800 text-zinc-400' : 'bg-slate-50/80 border-slate-200 text-slate-500'
+                  }`}
+                >
+                  <th className="py-3.5 px-5">Company & Position</th>
+                  <th className="py-3.5 px-4">Role Type</th>
+                  <th className="py-3.5 px-4">Stage Status</th>
+                  <th className="py-3.5 px-4">Applied Date</th>
+                  <th className="py-3.5 px-4">Compensation</th>
+                  <th className="py-3.5 px-5 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className={`divide-y text-xs ${isDark ? 'divide-zinc-800/70' : 'divide-slate-100'}`}>
+                {applications.map((app) => {
+                  const stageColors = themePalette[app.stage] || themePalette.total;
+
+                  return (
+                    <tr
+                      key={app.id}
+                      className={`transition-colors ${
+                        isDark ? 'hover:bg-zinc-800/40 text-zinc-200' : 'hover:bg-slate-50/80 text-slate-800'
+                      }`}
+                    >
+                      {/* Company & Position */}
+                      <td className="py-3.5 px-5">
+                        <div className="font-bold text-sm flex items-center gap-2">
+                          {app.company}
+                          {app.url && (
+                            <a
+                              href={app.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="opacity-50 hover:opacity-100 transition-opacity"
+                            >
+                              <Icon name="externalLink" className="w-3 h-3" />
+                            </a>
+                          )}
+                        </div>
+                        <div className={`text-xs ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>{app.position}</div>
+                        {app.location && (
+                          <div className={`text-[11px] flex items-center gap-1 mt-0.5 ${isDark ? 'text-zinc-500' : 'text-slate-400'}`}>
+                            <Icon name="mapPin" className="w-3 h-3" />
+                            {app.location}
+                          </div>
+                        )}
+                      </td>
+
+                      {/* Role Type */}
+                      <td className="py-3.5 px-4">
+                        <span
+                          className={`inline-block px-2.5 py-1 rounded-lg text-[11px] font-medium border ${
+                            isDark
+                              ? 'bg-zinc-800 border-zinc-700 text-zinc-300'
+                              : 'bg-slate-100 border-slate-200 text-slate-700'
+                          }`}
+                        >
+                          {ROLE_TYPE_LABELS[app.roleType] || app.roleType}
+                        </span>
+                      </td>
+
+                      {/* Stage Status Badge */}
+                      <td className="py-3.5 px-4">
+                        <span
+                          style={{
+                            backgroundColor: stageColors.bg,
+                            color: stageColors.text,
+                            borderColor: stageColors.border,
+                          }}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border shadow-xs"
+                        >
+                          <span
+                            className="w-1.5 h-1.5 rounded-full"
+                            style={{ backgroundColor: stageColors.fill }}
+                          />
+                          {app.stage}
+                        </span>
+                      </td>
+
+                      {/* Applied Date */}
+                      <td className="py-3.5 px-4">
+                        <div className="flex items-center gap-1">
+                          <Icon name="calendar" className={`w-3.5 h-3.5 ${isDark ? 'text-zinc-500' : 'text-slate-400'}`} />
+                          {app.appliedDate}
+                        </div>
+                        {app.responseDays && (
+                          <div className={`text-[10px] mt-0.5 ${isDark ? 'text-zinc-500' : 'text-slate-400'}`}>
+                            Reply in ~{app.responseDays}d
+                          </div>
+                        )}
+                      </td>
+
+                      {/* Compensation */}
+                      <td className="py-3.5 px-4 font-mono text-[11px]">
+                        {app.salaryOrStipend ? (
+                          <span className={isDark ? 'text-emerald-400' : 'text-emerald-700'}>
+                            {app.salaryOrStipend}
+                          </span>
+                        ) : (
+                          <span className={isDark ? 'text-zinc-600' : 'text-slate-300'}>—</span>
+                        )}
+                      </td>
+
+                      {/* Actions */}
+                      <td className="py-3.5 px-5 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => onEdit(app)}
+                            className={`p-1.5 rounded-lg transition-colors ${
+                              isDark
+                                ? 'hover:bg-zinc-700 text-zinc-300 hover:text-white'
+                                : 'hover:bg-slate-200 text-slate-600 hover:text-slate-900'
+                            }`}
+                            title="Edit Application"
+                          >
+                            <Icon name="edit" className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => onDelete(app.id)}
+                            className={`p-1.5 rounded-lg transition-colors ${
+                              isDark
+                                ? 'hover:bg-rose-950/60 text-zinc-400 hover:text-rose-400'
+                                : 'hover:bg-rose-50 text-slate-400 hover:text-rose-600'
+                            }`}
+                            title="Delete Application"
+                          >
+                            <Icon name="trash" className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      );
+    };
+
+    // ==========================================
+    // 7. ADD / EDIT APPLICATION MODAL
+    // ==========================================
+    const AddEditModal = ({ isOpen, onClose, onSave, editingApp, isDark }) => {
+      const [formData, setFormData] = useState({
+        company: '',
+        position: '',
+        roleType: 'working_student',
+        stage: 'Applied',
+        location: '',
+        appliedDate: new Date().toISOString().split('T')[0],
+        salaryOrStipend: '',
+        url: '',
+        notes: '',
+      });
+
+      useEffect(() => {
+        if (editingApp) {
+          setFormData(editingApp);
+        } else {
+          setFormData({
+            company: '',
+            position: '',
+            roleType: 'working_student',
+            stage: 'Applied',
+            location: '',
+            appliedDate: new Date().toISOString().split('T')[0],
+            salaryOrStipend: '',
+            url: '',
+            notes: '',
+          });
+        }
+      }, [editingApp, isOpen]);
+
+      if (!isOpen) return null;
+
+      const handleSubmit = (e) => {
+        e.preventDefault();
+        if (!formData.company || !formData.position) return;
+
+        const appToSave = {
+          id: editingApp ? editingApp.id : `app-${Date.now()}`,
+          company: formData.company,
+          position: formData.position,
+          roleType: formData.roleType,
+          stage: formData.stage,
+          location: formData.location || '',
+          appliedDate: formData.appliedDate || new Date().toISOString().split('T')[0],
+          lastUpdated: new Date().toISOString().split('T')[0],
+          salaryOrStipend: formData.salaryOrStipend,
+          url: formData.url,
+          notes: formData.notes,
+        };
+
+        onSave(appToSave);
+        onClose();
+      };
+
+      const stageOptions = [
+        'Applied',
+        'Rejected',
+        'No Answer',
+        'Interview',
+        'No Offer',
+        'Offer',
+        'Accepted',
+        'Declined',
+      ];
+
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div
+            className={`w-full max-w-lg rounded-3xl border shadow-2xl overflow-hidden p-6 transition-all ${
+              isDark ? 'bg-zinc-900 border-zinc-800 text-zinc-100 shadow-black' : 'bg-white border-slate-200 text-slate-800'
+            }`}
+          >
+            <div className="flex items-center justify-between pb-4 border-b border-inherit mb-5">
+              <h3 className="text-lg font-bold">
+                {editingApp ? 'Edit Job Application' : 'Add New Job Application'}
+              </h3>
+              <button
+                onClick={onClose}
+                className={`p-1.5 rounded-full transition-colors ${
+                  isDark ? 'hover:bg-zinc-800 text-zinc-400' : 'hover:bg-slate-100 text-slate-500'
+                }`}
+              >
+                <Icon name="x" className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold mb-1">Company *</label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.company}
+                    onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                    placeholder="e.g. BMW Group"
+                    className={`w-full px-3 py-2 text-xs rounded-xl border outline-none ${
+                      isDark
+                        ? 'bg-zinc-800 border-zinc-700 text-zinc-100 focus:border-indigo-500'
+                        : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-indigo-500'
+                    }`}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold mb-1">Position *</label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.position}
+                    onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+                    placeholder="e.g. Software Engineer"
+                    className={`w-full px-3 py-2 text-xs rounded-xl border outline-none ${
+                      isDark
+                        ? 'bg-zinc-800 border-zinc-700 text-zinc-100 focus:border-indigo-500'
+                        : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-indigo-500'
+                    }`}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold mb-1">Role Type</label>
+                  <select
+                    value={formData.roleType}
+                    onChange={(e) => setFormData({ ...formData, roleType: e.target.value })}
+                    className={`w-full px-3 py-2 text-xs rounded-xl border outline-none ${
+                      isDark
+                        ? 'bg-zinc-800 border-zinc-700 text-zinc-100 focus:border-indigo-500'
+                        : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-indigo-500'
+                    }`}
+                  >
+                    {Object.entries(ROLE_TYPE_LABELS).map(([val, lbl]) => (
+                      <option key={val} value={val}>
+                        {lbl}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Flat dropdown of the exact 8 stage values */}
+                <div>
+                  <label className="block text-xs font-semibold mb-1">Current Funnel Stage</label>
+                  <select
+                    value={formData.stage}
+                    onChange={(e) => setFormData({ ...formData, stage: e.target.value })}
+                    className={`w-full px-3 py-2 text-xs rounded-xl border outline-none font-medium ${
+                      isDark
+                        ? 'bg-zinc-800 border-zinc-700 text-zinc-100 focus:border-indigo-500'
+                        : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-indigo-500'
+                    }`}
+                  >
+                    {stageOptions.map((stg) => (
+                      <option key={stg} value={stg}>
+                        {stg}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold mb-1">Location</label>
+                  <input
+                    type="text"
+                    value={formData.location || ''}
+                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                    placeholder="e.g. Munich (Hybrid)"
+                    className={`w-full px-3 py-2 text-xs rounded-xl border outline-none ${
+                      isDark
+                        ? 'bg-zinc-800 border-zinc-700 text-zinc-100 focus:border-indigo-500'
+                        : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-indigo-500'
+                    }`}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold mb-1">Applied Date</label>
+                  <input
+                    type="date"
+                    value={formData.appliedDate || ''}
+                    onChange={(e) => setFormData({ ...formData, appliedDate: e.target.value })}
+                    className={`w-full px-3 py-2 text-xs rounded-xl border outline-none ${
+                      isDark
+                        ? 'bg-zinc-800 border-zinc-700 text-zinc-100 focus:border-indigo-500'
+                        : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-indigo-500'
+                    }`}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold mb-1">Compensation</label>
+                  <input
+                    type="text"
+                    value={formData.salaryOrStipend || ''}
+                    onChange={(e) => setFormData({ ...formData, salaryOrStipend: e.target.value })}
+                    placeholder="e.g. €18.50 / hr"
+                    className={`w-full px-3 py-2 text-xs rounded-xl border outline-none ${
+                      isDark
+                        ? 'bg-zinc-800 border-zinc-700 text-zinc-100 focus:border-indigo-500'
+                        : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-indigo-500'
+                    }`}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold mb-1">Job Link URL</label>
+                  <input
+                    type="url"
+                    value={formData.url || ''}
+                    onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+                    placeholder="https://..."
+                    className={`w-full px-3 py-2 text-xs rounded-xl border outline-none ${
+                      isDark
+                        ? 'bg-zinc-800 border-zinc-700 text-zinc-100 focus:border-indigo-500'
+                        : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-indigo-500'
+                    }`}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold mb-1">Notes</label>
+                <textarea
+                  rows={2}
+                  value={formData.notes || ''}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  placeholder="Interview rounds, prep notes, offer details..."
+                  className={`w-full px-3 py-2 text-xs rounded-xl border outline-none ${
+                    isDark
+                      ? 'bg-zinc-800 border-zinc-700 text-zinc-100 focus:border-indigo-500'
+                      : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-indigo-500'
+                  }`}
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4 border-t border-inherit">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className={`px-4 py-2 text-xs font-semibold rounded-xl border transition-colors ${
+                    isDark
+                      ? 'bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700'
+                      : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200'
+                  }`}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 text-xs font-semibold rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/30 transition-all active:scale-95"
+                >
+                  {editingApp ? 'Save Changes' : 'Add Application'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      );
+    };
+
+    // ==========================================
+    // 8. MAIN APPLICATION CONTAINER
+    // ==========================================
+    function App() {
+      // Theme State with localStorage persistence
+      const [isDark, setIsDark] = useState(() => {
+        const saved = localStorage.getItem('careertrack_theme');
+        if (saved) return saved === 'dark';
+        return window.matchMedia('(prefers-color-scheme: dark)').matches;
+      });
+
+      // Data state with localStorage persistence
+      const [applications, setApplications] = useState(() => {
+        const saved = localStorage.getItem('careertrack_apps_v2');
+        if (saved) {
+          try {
+            return JSON.parse(saved);
+          } catch (e) {
+            return SAMPLE_APPLICATIONS;
+          }
+        }
+        return SAMPLE_APPLICATIONS;
+      });
+
+      // Filters State
+      const [selectedRole, setSelectedRole] = useState('ALL');
+      const [selectedStage, setSelectedStage] = useState('ALL');
+      const [searchQuery, setSearchQuery] = useState('');
+
+      // Modal State
+      const [isModalOpen, setIsModalOpen] = useState(false);
+      const [editingApp, setEditingApp] = useState(null);
+
+      // Persist theme
+      useEffect(() => {
+        localStorage.setItem('careertrack_theme', isDark ? 'dark' : 'light');
+        if (isDark) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      }, [isDark]);
+
+      // Persist applications data locally
+      useEffect(() => {
+        localStorage.setItem('careertrack_apps_v2', JSON.stringify(applications));
+      }, [applications]);
+
+      // Derived data for Sankey
+      const filteredForSankey = useMemo(() => {
+        return applications.filter((app) => {
+          return selectedRole === 'ALL' || app.roleType === selectedRole;
+        });
+      }, [applications, selectedRole]);
+
+      // Derived data for Grid
+      const filteredForGrid = useMemo(() => {
+        return applications.filter((app) => {
+          const matchRole = selectedRole === 'ALL' || app.roleType === selectedRole;
+          const matchStage = selectedStage === 'ALL' || app.stage === selectedStage;
+          const matchSearch =
+            !searchQuery ||
+            app.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            app.position.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (app.location && app.location.toLowerCase().includes(searchQuery.toLowerCase()));
+
+          return matchRole && matchStage && matchSearch;
+        });
+      }, [applications, selectedRole, selectedStage, searchQuery]);
+
+      // Handlers
+      const handleSaveApp = (savedApp) => {
+        if (editingApp) {
+          setApplications((prev) => prev.map((a) => (a.id === savedApp.id ? savedApp : a)));
+        } else {
+          setApplications((prev) => [savedApp, ...prev]);
+        }
+        setEditingApp(null);
+      };
+
+      const handleDeleteApp = (id) => {
+        setApplications((prev) => prev.filter((a) => a.id !== id));
+      };
+
+      const handleOpenAdd = () => {
+        setEditingApp(null);
+        setIsModalOpen(true);
+      };
+
+      const handleEditApp = (app) => {
+        setEditingApp(app);
+        setIsModalOpen(true);
+      };
+
+      const handleExportData = () => {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(applications, null, 2));
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", `jobtracker_data_${new Date().toISOString().split('T')[0]}.json`);
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+      };
+
+      const handleResetSampleData = () => {
+        setApplications(SAMPLE_APPLICATIONS);
+        setSelectedRole('ALL');
+        setSelectedStage('ALL');
+        setSearchQuery('');
+      };
+
+      return (
+        <div className="min-h-screen transition-colors duration-300 pb-12">
+          {/* Top Header */}
+          <header
+            className={`sticky top-0 z-40 border-b backdrop-blur-md transition-colors ${
+              isDark
+                ? 'bg-zinc-950/80 border-zinc-800/80'
+                : 'bg-white/80 border-slate-200/80'
+            }`}
+          >
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white shadow-md shadow-indigo-500/25">
+                  <Icon name="briefcase" className="w-5 h-5" />
+                </div>
+                <div>
+                  <h1 className="font-extrabold text-base tracking-tight">
+                    Job Tracker
+                  </h1>
+                  <p className={`text-[11px] ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+                    Manage your job applications easily
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2.5">
+                <button
+                  onClick={handleResetSampleData}
+                  className={`px-3 py-1.5 rounded-2xl border text-xs font-medium transition-all ${
+                    isDark
+                      ? 'bg-zinc-900 border-zinc-800 text-zinc-300 hover:bg-zinc-800'
+                      : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200'
+                  }`}
+                  title="Reset to Sample Data"
+                >
+                  Reset Demo
+                </button>
+
+                <button
+                  onClick={() => setIsDark(!isDark)}
+                  className={`p-2 rounded-2xl border transition-all flex items-center gap-2 text-xs font-medium ${
+                    isDark
+                      ? 'bg-zinc-900 border-zinc-800 text-amber-400 hover:bg-zinc-800'
+                      : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200'
+                  }`}
+                  title="Toggle Theme Mode"
+                >
+                  <Icon name={isDark ? "sun" : "moon"} className="w-4 h-4 text-indigo-500" />
+                  <span className="hidden sm:inline">{isDark ? 'Light' : 'Dark'}</span>
+                </button>
+              </div>
+            </div>
+          </header>
+
+          {/* Main Content Area */}
+          <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+            {/* Stat Cards */}
+            <StatCards applications={filteredForSankey} isDark={isDark} />
+
+            {/* Custom SVG Sankey Diagram */}
+            <CustomSankeyChart
+              applications={filteredForSankey}
+              isDark={isDark}
+              selectedStageFilter={selectedStage}
+              onSelectStage={setSelectedStage}
+            />
+
+            {/* Filter Toolbar */}
+            <FilterToolbar
+              selectedRole={selectedRole}
+              onSelectRole={setSelectedRole}
+              selectedStage={selectedStage}
+              onSelectStage={setSelectedStage}
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              isDark={isDark}
+              onOpenAddModal={handleOpenAdd}
+              onExportData={handleExportData}
+              onResetSampleData={handleResetSampleData}
+            />
+
+            {/* Applications Table / Grid */}
+            <JobGrid
+              applications={filteredForGrid}
+              isDark={isDark}
+              onEdit={handleEditApp}
+              onDelete={handleDeleteApp}
+            />
+          </main>
+
+          {/* Add / Edit Modal */}
+          <AddEditModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            onSave={handleSaveApp}
+            editingApp={editingApp}
+            isDark={isDark}
+          />
+        </div>
+      );
+    }
+
+    const rootElement = document.getElementById('root');
+    const root = ReactDOM.createRoot(rootElement);
+    root.render(<App />);
+  </script>
+</body>
+</html>
